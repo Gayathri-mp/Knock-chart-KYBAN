@@ -1,16 +1,66 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useTournament } from '@/hooks/useTournament';
+import { TournamentSetup } from '@/components/TournamentSetup';
+import { BracketView } from '@/components/BracketView';
+import { RotateCcw, ChevronLeft } from 'lucide-react';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const {
+    teamCount,
+    matches,
+    availableTeams,
+    error,
+    started,
+    initTournament,
+    assignTeam,
+    removeTeam,
+    selectWinner,
+    resetTournament,
+  } = useTournament();
+
+  if (!started) {
+    return <TournamentSetup onStart={initTournament} error={error} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen flex flex-col">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="font-heading font-bold text-lg leading-none">
+              {teamCount}-Team Bracket
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {availableTeams.length} teams unassigned
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={resetTournament}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-secondary transition-colors text-muted-foreground"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset
+        </button>
+      </header>
+
+      <div className="flex-1 p-4">
+        <BracketView
+          matches={matches}
+          onSelectWinner={selectWinner}
+          onAssignTeam={assignTeam}
+          onRemoveTeam={removeTeam}
+          availableTeams={availableTeams}
+          teamCount={teamCount}
+        />
+      </div>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
