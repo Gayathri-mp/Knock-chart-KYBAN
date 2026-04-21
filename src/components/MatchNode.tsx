@@ -174,6 +174,7 @@ export function MatchNode({
   availableTeams,
   isFirstRound,
   compact,
+  scores,
 }: MatchNodeProps) {
   const [dropdownSlot, setDropdownSlot] = useState<'teamA' | 'teamB' | null>(null);
 
@@ -190,15 +191,18 @@ export function MatchNode({
     }
   };
 
+  const hasWinner = !!match.winner;
+
   return (
     <motion.div
       className={`
-        bg-match border border-match-border rounded-lg overflow-hidden
+        bg-match border rounded-lg overflow-hidden transition-shadow duration-300
         ${compact ? 'w-36' : 'w-44'}
-        ${match.isThirdPlace ? 'border-highlight/30' : ''}
+        ${match.isThirdPlace ? 'border-highlight/30' : 'border-match-border'}
+        ${hasWinner ? 'shadow-[0_0_0_1px_hsl(var(--winner)/0.5),0_0_18px_hsl(var(--winner)/0.25)]' : ''}
       `}
       initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: 1, scale: hasWinner ? 1.02 : 1 }}
       transition={{ duration: 0.3 }}
     >
       {match.isThirdPlace && (
@@ -223,6 +227,7 @@ export function MatchNode({
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamA'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
           onClose={() => setDropdownSlot(null)}
+          score={match.teamA && scores ? scores[match.teamA.id] : undefined}
         />
         <TeamSlot
           team={match.teamB}
@@ -235,6 +240,7 @@ export function MatchNode({
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamB'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
           onClose={() => setDropdownSlot(null)}
+          score={match.teamB && scores ? scores[match.teamB.id] : undefined}
         />
       </div>
     </motion.div>
