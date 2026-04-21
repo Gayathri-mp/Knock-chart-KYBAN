@@ -1,7 +1,8 @@
 import { Match, Team } from '@/lib/tournament';
 import { motion } from 'framer-motion';
 import { Trophy, User, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface MatchNodeProps {
   match: Match;
@@ -23,6 +24,7 @@ function TeamSlot({
   onSelectTeam,
   onRemove,
   isFirstRound,
+  onClose,
 }: {
   team: Team | null;
   isWinner: boolean;
@@ -33,10 +35,48 @@ function TeamSlot({
   onSelectTeam?: (team: Team) => void;
   onRemove?: () => void;
   isFirstRound?: boolean;
+  onClose?: () => void;
 }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!showDropdown || !buttonRef.current) return;
+    const update = () => {
+      const rect = buttonRef.current!.getBoundingClientRect();
+      const dropdownWidth = 240;
+      const viewportW = window.innerWidth;
+      let left = rect.left;
+      if (left + dropdownWidth > viewportW - 8) left = viewportW - dropdownWidth - 8;
+      if (left < 8) left = 8;
+      setCoords({ top: rect.bottom + 4, left });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [showDropdown]);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      const dd = document.getElementById('teamslot-dropdown-portal');
+      if (dd?.contains(target)) return;
+      onClose?.();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showDropdown, onClose]);
+
   return (
-    <div className="relative">
+    <>
       <motion.button
+        ref={buttonRef}
         onClick={onClick}
         className={`
           w-full flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all rounded
@@ -70,12 +110,14 @@ function TeamSlot({
         )}
       </motion.button>
 
-      {showDropdown && availableTeams && (
+      {showDropdown && availableTeams && coords && createPortal(
         <motion.div
+          id="teamslot-dropdown-portal"
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute z-50 top-full left-0 mt-1 w-56 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
-          style={{ minHeight: 220, maxHeight: '40vh' }}
+          className="fixed z-[9999] bg-popover border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ top: coords.top, left: coords.left, width: 240, minHeight: 220, maxHeight: '50vh' }}
+          onClick={(e) => e.stopPropagation()}
         >
           {team && onRemove && (
             <button
@@ -109,9 +151,10 @@ function TeamSlot({
               ))
             )}
           </div>
-        </motion.div>
+        </motion.div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -129,14 +172,11 @@ export function MatchNode({
   const handleTeamClick = (slot: 'teamA' | 'teamB') => {
     const team = slot === 'teamA' ? match.teamA : match.teamB;
 
-    // First round leaf nodes: a click always toggles the dropdown so the user
-    // can assign, replace, or remove a team in any order.
     if (isFirstRound) {
       setDropdownSlot(dropdownSlot === slot ? null : slot);
       return;
     }
 
-    // Non-leaf rounds: clicking a present team picks the winner.
     if (match.teamA && match.teamB && team) {
       onSelectWinner(match.matchId, team);
     }
@@ -152,7 +192,6 @@ export function MatchNode({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      onClick={() => setDropdownSlot(null)}
     >
       {match.isThirdPlace && (
         <div className="px-2 py-0.5 text-[10px] font-heading font-bold text-highlight bg-highlight/10 text-center uppercase tracking-wider">
@@ -164,7 +203,7 @@ export function MatchNode({
           🏆 Final
         </div>
       )}
-      <div className="divide-y divide-match-border" onClick={(e) => e.stopPropagation()}>
+      <div className="divide-y divide-match-border">
         <TeamSlot
           team={match.teamA}
           isWinner={!!match.winner && match.winner.id === match.teamA?.id}
@@ -175,6 +214,7 @@ export function MatchNode({
           onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamA', t); setDropdownSlot(null); }}
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamA'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
+          onClose={() => setDropdownSlot(null)}
         />
         <TeamSlot
           team={match.teamB}
@@ -186,6 +226,7 @@ export function MatchNode({
           onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamB', t); setDropdownSlot(null); }}
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamB'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
+          onClose={() => setDropdownSlot(null)}
         />
       </div>
     </motion.div>
