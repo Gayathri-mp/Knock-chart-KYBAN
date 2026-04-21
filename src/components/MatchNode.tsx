@@ -177,6 +177,12 @@ export function MatchNode({
   scores,
 }: MatchNodeProps) {
   const [dropdownSlot, setDropdownSlot] = useState<'teamA' | 'teamB' | null>(null);
+  const teamAOptions = match.teamA
+    ? [match.teamA, ...(availableTeams ?? []).filter((team) => team.id !== match.teamA?.id)]
+    : availableTeams;
+  const teamBOptions = match.teamB
+    ? [match.teamB, ...(availableTeams ?? []).filter((team) => team.id !== match.teamB?.id)]
+    : availableTeams;
 
   const handleTeamClick = (slot: 'teamA' | 'teamB') => {
     const team = slot === 'teamA' ? match.teamA : match.teamB;
@@ -222,7 +228,7 @@ export function MatchNode({
           isLoser={!!match.winner && match.teamA !== null && match.winner.id !== match.teamA?.id}
           onClick={() => handleTeamClick('teamA')}
           showDropdown={dropdownSlot === 'teamA'}
-          availableTeams={availableTeams}
+          availableTeams={teamAOptions}
           onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamA', t); setDropdownSlot(null); }}
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamA'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
@@ -235,7 +241,7 @@ export function MatchNode({
           isLoser={!!match.winner && match.teamB !== null && match.winner.id !== match.teamB?.id}
           onClick={() => handleTeamClick('teamB')}
           showDropdown={dropdownSlot === 'teamB'}
-          availableTeams={availableTeams}
+          availableTeams={teamBOptions}
           onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamB', t); setDropdownSlot(null); }}
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamB'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
