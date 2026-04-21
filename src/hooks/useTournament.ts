@@ -2,8 +2,12 @@ import { useState, useCallback, useMemo } from 'react';
 import {
   Team,
   MatchMap,
+  TeamScores,
   generateTeams,
   generateBracket,
+  generateTeamScores,
+  resolveBracket,
+  areLeavesFilled,
   setWinnerAndCascade,
   isPowerOfTwo,
 } from '@/lib/tournament';
