@@ -74,35 +74,41 @@ function TeamSlot({
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute z-50 top-full left-0 mt-1 w-52 max-h-48 overflow-y-auto bg-popover border border-border rounded-lg shadow-xl"
+          className="absolute z-50 top-full left-0 mt-1 w-56 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ minHeight: 220, maxHeight: '40vh' }}
         >
           {team && onRemove && (
             <button
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="w-full px-3 py-2 text-left text-sm text-loser hover:bg-loser/10 border-b border-border"
+              className="w-full px-3 py-2.5 text-left text-sm font-medium text-loser hover:bg-loser/10 border-b border-border flex-shrink-0"
             >
-              Remove {team.name}
+              ✕ Remove {team.name}
             </button>
           )}
-          {availableTeams.length === 0 && !team ? (
-            <div className="px-3 py-2 text-sm text-muted-foreground">No teams available</div>
-          ) : (
-            availableTeams.map((t) => (
-              <button
-                key={t.id}
-                onClick={(e) => { e.stopPropagation(); onSelectTeam?.(t); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary transition-colors"
-              >
-                <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                  style={{ backgroundColor: t.color + '33', color: t.color }}
+          <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-heading font-bold border-b border-border/50 flex-shrink-0">
+            {team ? 'Replace with' : 'Available Teams'} ({availableTeams.length})
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {availableTeams.length === 0 && !team ? (
+              <div className="px-3 py-4 text-sm text-muted-foreground text-center">No teams available</div>
+            ) : (
+              availableTeams.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={(e) => { e.stopPropagation(); onSelectTeam?.(t); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-secondary transition-colors border-b border-border/30 last:border-b-0"
                 >
-                  {t.logo}
-                </span>
-                {t.name}
-              </button>
-            ))
-          )}
+                  <span
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                    style={{ backgroundColor: t.color + '33', color: t.color }}
+                  >
+                    {t.logo}
+                  </span>
+                  <span className="truncate text-left">{t.name}</span>
+                </button>
+              ))
+            )}
+          </div>
         </motion.div>
       )}
     </div>
