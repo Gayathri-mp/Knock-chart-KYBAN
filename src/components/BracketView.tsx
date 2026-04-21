@@ -196,6 +196,7 @@ export function BracketView({
                 onRemoveTeam={isFirstRound ? onRemoveTeam : undefined}
                 availableTeams={isFirstRound ? availableTeams : undefined}
                 isFirstRound={isFirstRound}
+                scores={scores}
               />
             </div>
           );
