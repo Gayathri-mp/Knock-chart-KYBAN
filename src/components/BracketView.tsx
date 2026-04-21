@@ -31,6 +31,7 @@ export function BracketView({
   onRemoveTeam,
   availableTeams,
   teamCount,
+  scores,
 }: BracketViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [positions, setPositions] = useState<NodePos[]>([]);
