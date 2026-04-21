@@ -160,20 +160,13 @@ export function generateBracket(n: number): MatchMap {
     side: 'left',
   };
 
-  // Connect semi-finals to final
-  const leftSemis = Object.values(matches).filter(
-    (m) => m.side === 'left' && m.round === totalRounds - 1
-  );
-  const rightSemis = Object.values(matches).filter(
-    (m) => m.side === 'right' && m.round === totalRounds - 1
-  );
-
-  if (leftSemis.length > 0) {
-    leftSemis[0].nextMatchId = finalId;
-  }
-  if (rightSemis.length > 0) {
-    rightSemis[0].nextMatchId = finalId;
-  }
+  // Connect each side's last-round match (the side's semi-final) to the final.
+  const halfRounds = Math.log2(n / 2); // rounds within a half
+  const lastHalfRound = halfRounds - 1;
+  const leftSemi = matches[`left-r${lastHalfRound}-m0`];
+  const rightSemi = matches[`right-r${lastHalfRound}-m0`];
+  if (leftSemi) leftSemi.nextMatchId = finalId;
+  if (rightSemi) rightSemi.nextMatchId = finalId;
 
   // 3rd place match
   const thirdPlaceId = 'third-place';
@@ -198,11 +191,13 @@ function generateHalf(
   halfTeams: number,
   totalRounds: number
 ) {
-  const halfRounds = totalRounds - 1;
+  // Number of rounds within this half (excluding the final).
+  // halfTeams=2 -> 1 round (round 0 is the semi).
+  // halfTeams=4 -> 2 rounds. halfTeams=8 -> 3 rounds. etc.
+  const halfRounds = Math.log2(halfTeams);
   const firstRoundMatches = halfTeams / 2;
 
-  // Generate matches round by round
-  for (let round = 0; round <= halfRounds; round++) {
+  for (let round = 0; round < halfRounds; round++) {
     const matchesInRound = firstRoundMatches / Math.pow(2, round);
     for (let pos = 0; pos < matchesInRound; pos++) {
       const matchId = `${side}-r${round}-m${pos}`;
@@ -210,10 +205,10 @@ function generateHalf(
       const nextPos = Math.floor(pos / 2);
       let nextMatchId: string | null = null;
 
-      if (nextRound <= halfRounds) {
+      if (nextRound < halfRounds) {
         nextMatchId = `${side}-r${nextRound}-m${nextPos}`;
       }
-      // If this is the last round of the half, nextMatchId will be set later (to final)
+      // Last round of the half feeds the final — set later.
 
       matches[matchId] = {
         matchId,

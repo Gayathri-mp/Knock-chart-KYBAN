@@ -107,14 +107,14 @@ function TeamSlot({
             )}
             {isWinner && <Trophy className="w-3.5 h-3.5 text-winner flex-shrink-0" />}
           </>
-        ) : (
+        ) : isFirstRound ? (
           <>
             <User className="w-4 h-4 flex-shrink-0 opacity-40" />
-            <span className="flex-1 text-left text-xs">
-              {isFirstRound ? 'Select team' : 'TBD'}
-            </span>
-            {isFirstRound && <ChevronDown className="w-3 h-3 opacity-40" />}
+            <span className="flex-1 text-left text-xs">Select team</span>
+            <ChevronDown className="w-3 h-3 opacity-40" />
           </>
+        ) : (
+          <span className="flex-1 text-left text-xs opacity-0 select-none">·</span>
         )}
       </motion.button>
 
