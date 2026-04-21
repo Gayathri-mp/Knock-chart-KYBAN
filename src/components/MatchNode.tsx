@@ -26,6 +26,7 @@ function TeamSlot({
   onRemove,
   isFirstRound,
   onClose,
+  score,
 }: {
   team: Team | null;
   isWinner: boolean;
@@ -37,6 +38,7 @@ function TeamSlot({
   onRemove?: () => void;
   isFirstRound?: boolean;
   onClose?: () => void;
+  score?: number;
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
