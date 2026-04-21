@@ -100,6 +100,11 @@ function TeamSlot({
               {team.logo}
             </span>
             <span className="truncate flex-1 text-left">{team.name}</span>
+            {typeof score === 'number' && (
+              <span className={`text-xs font-mono tabular-nums px-1.5 py-0.5 rounded ${isWinner ? 'bg-winner/20 text-winner' : isLoser ? 'text-loser/60' : 'text-muted-foreground'}`}>
+                {score}
+              </span>
+            )}
             {isWinner && <Trophy className="w-3.5 h-3.5 text-winner flex-shrink-0" />}
           </>
         ) : (
