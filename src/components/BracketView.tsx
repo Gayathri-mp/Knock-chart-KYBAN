@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import { MatchMap, Team, getMatchesByRound } from '@/lib/tournament';
+import { MatchMap, Team, TeamScores, getMatchesByRound } from '@/lib/tournament';
 import { MatchNode } from './MatchNode';
 import { motion } from 'framer-motion';
 
@@ -10,6 +10,7 @@ interface BracketViewProps {
   onRemoveTeam: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams: Team[];
   teamCount: number;
+  scores?: TeamScores;
 }
 
 const NODE_W = 176;
