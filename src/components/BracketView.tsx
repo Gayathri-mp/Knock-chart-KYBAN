@@ -167,7 +167,7 @@ export function BracketView({
                 d={`M${line.x1},${line.y1} C${midX},${line.y1} ${midX},${line.y2} ${line.x2},${line.y2}`}
                 fill="none"
                 className={
-                  line.isWinner ? 'line-winner' : 'line-neutral'
+                  line.isLoser ? 'line-loser' : line.isWinner ? 'line-winner' : 'line-neutral'
                 }
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
