@@ -129,12 +129,14 @@ export function MatchNode({
   const handleTeamClick = (slot: 'teamA' | 'teamB') => {
     const team = slot === 'teamA' ? match.teamA : match.teamB;
 
-    if (isFirstRound && (!team || dropdownSlot === slot)) {
+    // First round leaf nodes: a click always toggles the dropdown so the user
+    // can assign, replace, or remove a team in any order.
+    if (isFirstRound) {
       setDropdownSlot(dropdownSlot === slot ? null : slot);
       return;
     }
 
-    // If both teams exist and no winner yet, clicking selects winner
+    // Non-leaf rounds: clicking a present team picks the winner.
     if (match.teamA && match.teamB && team) {
       onSelectWinner(match.matchId, team);
     }
