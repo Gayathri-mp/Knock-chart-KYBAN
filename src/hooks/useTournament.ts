@@ -12,15 +12,26 @@ import {
   isPowerOfTwo,
 } from '@/lib/tournament';
 
+function collectAssignedTeamIds(matches: MatchMap): Set<string> {
+  const ids = new Set<string>();
+  Object.values(matches).forEach((match) => {
+    if (match.round !== 0 || match.isThirdPlace || match.matchId === 'final') return;
+    if (match.teamA) ids.add(match.teamA.id);
+    if (match.teamB) ids.add(match.teamB.id);
+  });
+  return ids;
+}
+
 export function useTournament() {
   const [teamCount, setTeamCount] = useState<number>(8);
   const [teams, setTeams] = useState<Team[]>(() => generateTeams(8));
   const [scores, setScores] = useState<TeamScores>(() => generateTeamScores(generateTeams(8)));
   const [matches, setMatches] = useState<MatchMap>(() => generateBracket(8));
-  const [assignedTeamIds, setAssignedTeamIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
+
+  const assignedTeamIds = useMemo(() => collectAssignedTeamIds(matches), [matches]);
 
   const availableTeams = useMemo(
     () => teams.filter((t) => !assignedTeamIds.has(t.id)),
@@ -40,7 +51,6 @@ export function useTournament() {
     setTeams(newTeams);
     setScores(generateTeamScores(newTeams));
     setMatches(generateBracket(n));
-    setAssignedTeamIds(new Set());
     setAutoMode(false);
     setStarted(true);
   }, []);
@@ -49,13 +59,28 @@ export function useTournament() {
     (matchId: string, slot: 'teamA' | 'teamB', team: Team) => {
       setMatches((prev) => {
         const updated = { ...prev };
-        updated[matchId] = { ...updated[matchId], [slot]: team };
+        const match = updated[matchId];
+        if (!match) return prev;
+
+        const currentTeam = match[slot];
+        if (currentTeam?.id === team.id) return prev;
+
+        const duplicateInAnotherSlot = Object.values(prev).some((m) => {
+          if (m.matchId === matchId) {
+            const otherSlot = slot === 'teamA' ? 'teamB' : 'teamA';
+            return m[otherSlot]?.id === team.id;
+          }
+          return m.teamA?.id === team.id || m.teamB?.id === team.id;
+        });
+
+        if (duplicateInAnotherSlot) return prev;
+
+        updated[matchId] = {
+          ...match,
+          [slot]: team,
+          winner: match.winner?.id === currentTeam?.id ? null : match.winner,
+        };
         return updated;
-      });
-      setAssignedTeamIds((prev) => {
-        const next = new Set(prev);
-        next.add(team.id);
-        return next;
       });
     },
     []
@@ -74,16 +99,9 @@ export function useTournament() {
         }
         return updated;
       });
-      setAssignedTeamIds((prev) => {
-        const next = new Set(prev);
-        const match = matches[matchId];
-        const team = match[slot];
-        if (team) next.delete(team.id);
-        return next;
-      });
       setAutoMode(false);
     },
-    [matches]
+    []
   );
 
   const selectWinner = useCallback((matchId: string, winner: Team) => {
@@ -92,7 +110,6 @@ export function useTournament() {
 
   const resetTournament = useCallback(() => {
     setMatches(generateBracket(teamCount));
-    setAssignedTeamIds(new Set());
     setAutoMode(false);
   }, [teamCount]);
 
