@@ -1,4 +1,4 @@
-import { Match, Team } from '@/lib/tournament';
+import { Match, Team, TeamScores } from '@/lib/tournament';
 import { motion } from 'framer-motion';
 import { Trophy, User, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
@@ -12,6 +12,7 @@ interface MatchNodeProps {
   availableTeams?: Team[];
   isFirstRound?: boolean;
   compact?: boolean;
+  scores?: TeamScores;
 }
 
 function TeamSlot({
