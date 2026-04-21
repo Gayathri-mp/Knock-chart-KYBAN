@@ -19,6 +19,101 @@ export interface Match {
 
 export type MatchMap = Record<string, Match>;
 
+export type TeamScores = Record<string, number>;
+
+/** Generate deterministic-ish scores 50-99 for each team. */
+export function generateTeamScores(teams: Team[]): TeamScores {
+  const scores: TeamScores = {};
+  teams.forEach((t, i) => {
+    // Deterministic pseudo-score based on id index
+    const seed = (i * 9301 + 49297) % 233280;
+    scores[t.id] = 50 + (seed % 50);
+  });
+  return scores;
+}
+
+/** Are all first-round (leaf) slots filled? */
+export function areLeavesFilled(matches: MatchMap): boolean {
+  const leaves = Object.values(matches).filter(
+    (m) => m.round === 0 && !m.isThirdPlace && m.matchId !== 'final'
+  );
+  return leaves.length > 0 && leaves.every((m) => m.teamA && m.teamB);
+}
+
+/**
+ * Pure function: traverse bracket bottom-up and resolve every match
+ * by comparing teamScores. Higher score wins. Also resolves the
+ * 3rd-place match using the two semi-final losers.
+ */
+export function resolveBracket(matches: MatchMap, scores: TeamScores): MatchMap {
+  const updated: MatchMap = JSON.parse(JSON.stringify(matches));
+
+  // Reset all winners and propagated slots first (keep leaves)
+  Object.values(updated).forEach((m) => {
+    m.winner = null;
+    if (m.round > 0 && !m.isThirdPlace && m.matchId !== 'final') {
+      m.teamA = null;
+      m.teamB = null;
+    }
+  });
+  if (updated['final']) {
+    updated['final'].teamA = null;
+    updated['final'].teamB = null;
+    updated['final'].winner = null;
+  }
+  if (updated['third-place']) {
+    updated['third-place'].teamA = null;
+    updated['third-place'].teamB = null;
+    updated['third-place'].winner = null;
+  }
+
+  // Sort matches by round ascending, skip third-place (handled last)
+  const ordered = Object.values(updated)
+    .filter((m) => !m.isThirdPlace)
+    .sort((a, b) => a.round - b.round);
+
+  for (const m of ordered) {
+    if (!m.teamA || !m.teamB) continue;
+    const sa = scores[m.teamA.id] ?? 0;
+    const sb = scores[m.teamB.id] ?? 0;
+    const winner = sa >= sb ? m.teamA : m.teamB;
+    m.winner = winner;
+
+    if (m.nextMatchId && updated[m.nextMatchId]) {
+      const next = updated[m.nextMatchId];
+      const isTopSlot = m.position % 2 === 0;
+      if (m.nextMatchId === 'final') {
+        if (m.side === 'left') next.teamA = winner;
+        else next.teamB = winner;
+      } else if (isTopSlot) {
+        next.teamA = winner;
+      } else {
+        next.teamB = winner;
+      }
+    }
+  }
+
+  // Third-place: losers of semi-finals
+  const thirdPlace = updated['third-place'];
+  if (thirdPlace) {
+    const semis = Object.values(updated).filter((m) => m.nextMatchId === 'final');
+    semis.forEach((sf, i) => {
+      if (sf.winner && sf.teamA && sf.teamB) {
+        const loser = sf.winner.id === sf.teamA.id ? sf.teamB : sf.teamA;
+        if (i === 0) thirdPlace.teamA = loser;
+        else thirdPlace.teamB = loser;
+      }
+    });
+    if (thirdPlace.teamA && thirdPlace.teamB) {
+      const sa = scores[thirdPlace.teamA.id] ?? 0;
+      const sb = scores[thirdPlace.teamB.id] ?? 0;
+      thirdPlace.winner = sa >= sb ? thirdPlace.teamA : thirdPlace.teamB;
+    }
+  }
+
+  return updated;
+}
+
 const TEAM_COLORS = [
   '#E63946', '#457B9D', '#2A9D8F', '#E9C46A',
   '#F4A261', '#264653', '#6A4C93', '#1982C4',

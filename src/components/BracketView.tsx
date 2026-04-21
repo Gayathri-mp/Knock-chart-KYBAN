@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import { MatchMap, Team, getMatchesByRound } from '@/lib/tournament';
+import { MatchMap, Team, TeamScores, getMatchesByRound } from '@/lib/tournament';
 import { MatchNode } from './MatchNode';
 import { motion } from 'framer-motion';
 
@@ -10,6 +10,7 @@ interface BracketViewProps {
   onRemoveTeam: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams: Team[];
   teamCount: number;
+  scores?: TeamScores;
 }
 
 const NODE_W = 176;
@@ -30,6 +31,7 @@ export function BracketView({
   onRemoveTeam,
   availableTeams,
   teamCount,
+  scores,
 }: BracketViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [positions, setPositions] = useState<NodePos[]>([]);
@@ -115,6 +117,7 @@ export function BracketView({
 
       const from = posMap[m.matchId];
       const to = posMap[m.nextMatchId];
+      const next = matches[m.nextMatchId];
 
       const fromSide = m.side;
       const x1 = fromSide === 'left' ? from.x + NODE_W : from.x;
@@ -122,12 +125,19 @@ export function BracketView({
       const x2 = fromSide === 'left' ? to.x : to.x + NODE_W;
       const y2 = to.y + NODE_H / 2;
 
-      result.push({
-        x1, y1, x2, y2,
-        matchId: m.matchId,
-        isWinner: !!m.winner,
-        isLoser: false,
-      });
+      // Winner path: this match's winner advanced AND went on to win the next
+      // Loser path: this match's winner advanced but lost in the next match
+      const advanced = m.winner;
+      let isWinner = false;
+      let isLoser = false;
+      if (advanced && next?.winner) {
+        if (next.winner.id === advanced.id) isWinner = true;
+        else isLoser = true;
+      } else if (advanced) {
+        isWinner = true; // advanced but next not yet decided — show as winner path
+      }
+
+      result.push({ x1, y1, x2, y2, matchId: m.matchId, isWinner, isLoser });
     });
 
     return result;
@@ -157,7 +167,7 @@ export function BracketView({
                 d={`M${line.x1},${line.y1} C${midX},${line.y1} ${midX},${line.y2} ${line.x2},${line.y2}`}
                 fill="none"
                 className={
-                  line.isWinner ? 'line-winner' : 'line-neutral'
+                  line.isLoser ? 'line-loser' : line.isWinner ? 'line-winner' : 'line-neutral'
                 }
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
@@ -186,6 +196,7 @@ export function BracketView({
                 onRemoveTeam={isFirstRound ? onRemoveTeam : undefined}
                 availableTeams={isFirstRound ? availableTeams : undefined}
                 isFirstRound={isFirstRound}
+                scores={scores}
               />
             </div>
           );
