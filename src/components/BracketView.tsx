@@ -117,6 +117,7 @@ export function BracketView({
 
       const from = posMap[m.matchId];
       const to = posMap[m.nextMatchId];
+      const next = matches[m.nextMatchId];
 
       const fromSide = m.side;
       const x1 = fromSide === 'left' ? from.x + NODE_W : from.x;
@@ -124,12 +125,19 @@ export function BracketView({
       const x2 = fromSide === 'left' ? to.x : to.x + NODE_W;
       const y2 = to.y + NODE_H / 2;
 
-      result.push({
-        x1, y1, x2, y2,
-        matchId: m.matchId,
-        isWinner: !!m.winner,
-        isLoser: false,
-      });
+      // Winner path: this match's winner advanced AND went on to win the next
+      // Loser path: this match's winner advanced but lost in the next match
+      const advanced = m.winner;
+      let isWinner = false;
+      let isLoser = false;
+      if (advanced && next?.winner) {
+        if (next.winner.id === advanced.id) isWinner = true;
+        else isLoser = true;
+      } else if (advanced) {
+        isWinner = true; // advanced but next not yet decided — show as winner path
+      }
+
+      result.push({ x1, y1, x2, y2, matchId: m.matchId, isWinner, isLoser });
     });
 
     return result;
