@@ -10,7 +10,7 @@ import {
   areLeavesFilled,
   setWinnerAndCascade,
   isPowerOfTwo,
-} from '@/lib/tournament';
+} from '../lib/tournament';
 
 function collectAssignedTeamIds(matches: MatchMap): Set<string> {
   const ids = new Set<string>();
@@ -118,7 +118,6 @@ export function useTournament() {
     setMatches((prev) => resolveBracket(prev, scores));
   }, [scores]);
 
-  // While autoMode is on, recompute whenever leaf assignments change
   const prevLeafKey = useRef<string>('');
   useEffect(() => {
     if (!autoMode) return;
@@ -151,5 +150,6 @@ export function useTournament() {
     selectWinner,
     resetTournament,
     autoResolve,
+    exitTournament: () => setStarted(false),
   };
 }

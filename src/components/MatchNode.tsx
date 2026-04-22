@@ -1,254 +1,252 @@
-import { Match, Team, TeamScores } from '@/lib/tournament';
-import { motion } from 'framer-motion';
-import { Trophy, User, ChevronDown } from 'lucide-react';
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+} from 'react-native';
+import { Trophy, User, ChevronRight, Swords } from 'lucide-react-native';
+import { Team, Match, TeamScores } from '../lib/tournament';
 
-interface MatchNodeProps {
-  match: Match;
-  onSelectWinner: (matchId: string, winner: Team) => void;
-  onAssignTeam?: (matchId: string, slot: 'teamA' | 'teamB', team: Team) => void;
-  onRemoveTeam?: (matchId: string, slot: 'teamA' | 'teamB') => void;
-  availableTeams?: Team[];
-  isFirstRound?: boolean;
-  compact?: boolean;
-  scores?: TeamScores;
-}
-
-function TeamSlot({
-  team,
-  isWinner,
-  isLoser,
-  onClick,
-  showDropdown,
-  availableTeams,
-  onSelectTeam,
-  onRemove,
-  isFirstRound,
-  onClose,
-  score,
-}: {
+interface TeamSlotProps {
   team: Team | null;
   isWinner: boolean;
   isLoser: boolean;
-  onClick: () => void;
-  showDropdown: boolean;
-  availableTeams?: Team[];
-  onSelectTeam?: (team: Team) => void;
-  onRemove?: () => void;
+  onAssign?: () => void;
   isFirstRound?: boolean;
-  onClose?: () => void;
-  score?: number;
-}) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-
-  useLayoutEffect(() => {
-    if (!showDropdown || !buttonRef.current) return;
-    const update = () => {
-      const rect = buttonRef.current!.getBoundingClientRect();
-      const dropdownWidth = 240;
-      const viewportW = window.innerWidth;
-      let left = rect.left;
-      if (left + dropdownWidth > viewportW - 8) left = viewportW - dropdownWidth - 8;
-      if (left < 8) left = 8;
-      setCoords({ top: rect.bottom + 4, left });
-    };
-    update();
-    window.addEventListener('scroll', update, true);
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update, true);
-      window.removeEventListener('resize', update);
-    };
-  }, [showDropdown]);
-
-  useEffect(() => {
-    if (!showDropdown) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (buttonRef.current?.contains(target)) return;
-      const dd = document.getElementById('teamslot-dropdown-portal');
-      if (dd?.contains(target)) return;
-      onClose?.();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showDropdown, onClose]);
-
-  return (
-    <>
-      <motion.button
-        ref={buttonRef}
-        onClick={onClick}
-        className={`
-          w-full flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all rounded
-          ${isWinner ? 'bg-winner/15 text-winner border-l-2 border-winner' : ''}
-          ${isLoser ? 'bg-loser/10 text-loser/60 border-l-2 border-loser/30' : ''}
-          ${!isWinner && !isLoser ? 'hover:bg-match-hover text-foreground' : ''}
-          ${!team ? 'text-muted-foreground italic' : ''}
-        `}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        {team ? (
-          <>
-            <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-              style={{ backgroundColor: team.color + '33', color: team.color }}
-            >
-              {team.logo}
-            </span>
-            <span className="truncate flex-1 text-left">{team.name}</span>
-            {typeof score === 'number' && (
-              <span className={`text-xs font-mono tabular-nums px-1.5 py-0.5 rounded ${isWinner ? 'bg-winner/20 text-winner' : isLoser ? 'text-loser/60' : 'text-muted-foreground'}`}>
-                {score}
-              </span>
-            )}
-            {isWinner && <Trophy className="w-3.5 h-3.5 text-winner flex-shrink-0" />}
-          </>
-        ) : isFirstRound ? (
-          <>
-            <User className="w-4 h-4 flex-shrink-0 opacity-40" />
-            <span className="flex-1 text-left text-xs">Select team</span>
-            <ChevronDown className="w-3 h-3 opacity-40" />
-          </>
-        ) : (
-          <span className="flex-1 text-left text-xs opacity-0 select-none">·</span>
-        )}
-      </motion.button>
-
-      {showDropdown && availableTeams && coords && createPortal(
-        <motion.div
-          id="teamslot-dropdown-portal"
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed z-[9999] bg-popover border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
-          style={{ top: coords.top, left: coords.left, width: 240, minHeight: 220, maxHeight: '50vh' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {team && onRemove && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="w-full px-3 py-2.5 text-left text-sm font-medium text-loser hover:bg-loser/10 border-b border-border flex-shrink-0"
-            >
-              ✕ Remove {team.name}
-            </button>
-          )}
-          <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-heading font-bold border-b border-border/50 flex-shrink-0">
-            {team ? 'Replace with' : 'Available Teams'} ({availableTeams.length})
-          </div>
-          <div className="overflow-y-auto flex-1">
-            {availableTeams.length === 0 && !team ? (
-              <div className="px-3 py-4 text-sm text-muted-foreground text-center">No teams available</div>
-            ) : (
-              availableTeams.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={(e) => { e.stopPropagation(); onSelectTeam?.(t); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-secondary transition-colors border-b border-border/30 last:border-b-0"
-                >
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-                    style={{ backgroundColor: t.color + '33', color: t.color }}
-                  >
-                    {t.logo}
-                  </span>
-                  <span className="truncate text-left">{t.name}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </motion.div>,
-        document.body
-      )}
-    </>
-  );
 }
 
-export function MatchNode({
-  match,
-  onSelectWinner,
-  onAssignTeam,
-  onRemoveTeam,
-  availableTeams,
+const TeamSlot = ({
+  team,
+  isWinner,
+  isLoser,
+  onAssign,
   isFirstRound,
-  compact,
-  scores,
-}: MatchNodeProps) {
-  const [dropdownSlot, setDropdownSlot] = useState<'teamA' | 'teamB' | null>(null);
-  const teamAOptions = match.teamA
-    ? [match.teamA, ...(availableTeams ?? []).filter((team) => team.id !== match.teamA?.id)]
-    : availableTeams;
-  const teamBOptions = match.teamB
-    ? [match.teamB, ...(availableTeams ?? []).filter((team) => team.id !== match.teamB?.id)]
-    : availableTeams;
+}: TeamSlotProps) => {
+  return (
+    <View
+      style={[
+        styles.teamSlot,
+        isWinner && styles.winnerSlot,
+        isLoser && styles.loserSlot,
+      ]}
+    >
+      {team ? (
+        <View style={styles.teamContent}>
+          <View style={[styles.logoContainer, { backgroundColor: team.color + '22' }]}>
+            <Text style={[styles.logoText, { color: team.color }]}>{team.logo}</Text>
+          </View>
+          <Text
+            style={[
+              styles.teamName,
+              isWinner && styles.winnerText,
+              isLoser && styles.loserText,
+            ]}
+            numberOfLines={1}
+          >
+            {team.name}
+          </Text>
+          {isWinner && <Trophy size={14} color="#40C057" />}
+        </View>
+      ) : (
+        <TouchableOpacity 
+          style={styles.teamContent} 
+          onPress={onAssign}
+          disabled={!isFirstRound}
+        >
+          {isFirstRound ? (
+            <>
+              <User size={14} color="#ADB5BD" />
+              <Text style={styles.placeholderText}>Select team</Text>
+            </>
+          ) : (
+            <Text style={styles.emptySlot}>TBD</Text>
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
-  const handleTeamClick = (slot: 'teamA' | 'teamB') => {
-    const team = slot === 'teamA' ? match.teamA : match.teamB;
+interface MatchNodeProps {
+  match: Match;
+  onOpenWinnerSelection: (match: Match) => void;
+  onOpenTeamSelection: (matchId: string, slot: 'teamA' | 'teamB') => void;
+  isFirstRound?: boolean;
+}
 
-    if (isFirstRound) {
-      setDropdownSlot(dropdownSlot === slot ? null : slot);
-      return;
-    }
-
-    if (match.teamA && match.teamB && team) {
-      onSelectWinner(match.matchId, team);
-    }
-  };
-
+export const MatchNode = ({
+  match,
+  onOpenWinnerSelection,
+  onOpenTeamSelection,
+  isFirstRound,
+}: MatchNodeProps) => {
+  const hasTeams = match.teamA && match.teamB;
   const hasWinner = !!match.winner;
 
   return (
-    <motion.div
-      className={`
-        bg-match border rounded-lg overflow-hidden transition-shadow duration-300
-        ${compact ? 'w-36' : 'w-44'}
-        ${match.isThirdPlace ? 'border-highlight/30' : 'border-match-border'}
-        ${hasWinner ? 'shadow-[0_0_0_1px_hsl(var(--winner)/0.5),0_0_18px_hsl(var(--winner)/0.25)]' : ''}
-      `}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: hasWinner ? 1.02 : 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {match.isThirdPlace && (
-        <div className="px-2 py-0.5 text-[10px] font-heading font-bold text-highlight bg-highlight/10 text-center uppercase tracking-wider">
-          3rd Place
-        </div>
-      )}
-      {match.matchId === 'final' && (
-        <div className="px-2 py-0.5 text-[10px] font-heading font-bold text-accent bg-accent/10 text-center uppercase tracking-wider">
-          🏆 Final
-        </div>
-      )}
-      <div className="divide-y divide-match-border">
+    <View style={styles.container}>
+      {/* Team Slots */}
+      <View style={[styles.slotsCard, hasWinner && styles.cardWithWinner]}>
         <TeamSlot
           team={match.teamA}
-          isWinner={!!match.winner && match.winner.id === match.teamA?.id}
-          isLoser={!!match.winner && match.teamA !== null && match.winner.id !== match.teamA?.id}
-          onClick={() => handleTeamClick('teamA')}
-          showDropdown={dropdownSlot === 'teamA'}
-          availableTeams={teamAOptions}
-          onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamA', t); setDropdownSlot(null); }}
-          onRemove={() => { onRemoveTeam?.(match.matchId, 'teamA'); setDropdownSlot(null); }}
+          isWinner={hasWinner && match.winner?.id === match.teamA?.id}
+          isLoser={hasWinner && match.teamA !== null && match.winner?.id !== match.teamA?.id}
+          onAssign={() => onOpenTeamSelection(match.matchId, 'teamA')}
           isFirstRound={isFirstRound}
-          onClose={() => setDropdownSlot(null)}
-          score={match.teamA && scores ? scores[match.teamA.id] : undefined}
         />
+        <View style={styles.divider} />
         <TeamSlot
           team={match.teamB}
-          isWinner={!!match.winner && match.winner.id === match.teamB?.id}
-          isLoser={!!match.winner && match.teamB !== null && match.winner.id !== match.teamB?.id}
-          onClick={() => handleTeamClick('teamB')}
-          showDropdown={dropdownSlot === 'teamB'}
-          availableTeams={teamBOptions}
-          onSelectTeam={(t) => { onAssignTeam?.(match.matchId, 'teamB', t); setDropdownSlot(null); }}
-          onRemove={() => { onRemoveTeam?.(match.matchId, 'teamB'); setDropdownSlot(null); }}
+          isWinner={hasWinner && match.winner?.id === match.teamB?.id}
+          isLoser={hasWinner && match.teamB !== null && match.winner?.id !== match.teamB?.id}
+          onAssign={() => onOpenTeamSelection(match.matchId, 'teamB')}
           isFirstRound={isFirstRound}
-          onClose={() => setDropdownSlot(null)}
-          score={match.teamB && scores ? scores[match.teamB.id] : undefined}
         />
-      </div>
-    </motion.div>
+      </View>
+
+      {/* Match Selection Button (The "Connection Point") */}
+      <TouchableOpacity
+        style={[
+          styles.matchButton,
+          hasWinner && styles.matchButtonActive,
+          !hasTeams && styles.matchButtonDisabled
+        ]}
+        onPress={() => hasTeams && onOpenWinnerSelection(match)}
+        disabled={!hasTeams}
+      >
+        <Swords size={16} color={hasWinner ? '#FFF' : (hasTeams ? '#339AF0' : '#ADB5BD')} />
+      </TouchableOpacity>
+
+      {/* Round/Type Label */}
+      <View style={styles.labelContainer}>
+        <Text style={styles.labelText}>
+          {match.isThirdPlace ? '3rd Place Match' : (match.matchId === 'final' ? '🏆 Grand Final' : `Match ${match.matchId.split('-').pop()}`)}
+        </Text>
+      </View>
+    </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: 180,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  slotsCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#E9ECEF',
+    // Removed overflow: 'hidden' to allow match button interaction
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardWithWinner: {
+    borderColor: '#40C057',
+    shadowColor: '#40C057',
+    shadowOpacity: 0.15,
+  },
+  teamSlot: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
+  },
+  winnerSlot: {
+    backgroundColor: '#F2FBF2',
+  },
+  loserSlot: {
+    backgroundColor: '#FFF5F5',
+    opacity: 0.7,
+  },
+  teamContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoContainer: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 14,
+  },
+  teamName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#212529',
+  },
+  winnerText: {
+    color: '#2B8A3E',
+  },
+  loserText: {
+    color: '#868E96',
+    textDecorationLine: 'line-through',
+  },
+  placeholderText: {
+    fontSize: 12,
+    color: '#ADB5BD',
+    fontWeight: '500',
+  },
+  emptySlot: {
+    fontSize: 12,
+    color: '#DEE2E6',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    width: '100%',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F3F5',
+  },
+  matchButton: {
+    position: 'absolute',
+    right: -20,
+    top: '50%',
+    marginTop: -15, // Center vertically (36/2 - some offset for label)
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderWidth: 3,
+    borderColor: '#339AF0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+    shadowColor: '#339AF0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  matchButtonActive: {
+    backgroundColor: '#40C057',
+    borderColor: '#40C057',
+    shadowColor: '#40C057',
+  },
+  matchButtonDisabled: {
+    borderColor: '#DEE2E6',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  labelContainer: {
+    marginTop: 8,
+  },
+  labelText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#ADB5BD',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+});

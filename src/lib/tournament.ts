@@ -191,9 +191,6 @@ function generateHalf(
   halfTeams: number,
   totalRounds: number
 ) {
-  // Number of rounds within this half (excluding the final).
-  // halfTeams=2 -> 1 round (round 0 is the semi).
-  // halfTeams=4 -> 2 rounds. halfTeams=8 -> 3 rounds. etc.
   const halfRounds = Math.log2(halfTeams);
   const firstRoundMatches = halfTeams / 2;
 
@@ -208,7 +205,6 @@ function generateHalf(
       if (nextRound < halfRounds) {
         nextMatchId = `${side}-r${nextRound}-m${nextPos}`;
       }
-      // Last round of the half feeds the final — set later.
 
       matches[matchId] = {
         matchId,
@@ -234,82 +230,17 @@ export function getMatchesByRound(matches: MatchMap, side: 'left' | 'right'): Ma
   const sideMatches = Object.values(matches).filter(
     (m) => m.side === side && !m.isThirdPlace && m.matchId !== 'final'
   );
+  if (sideMatches.length === 0) return [];
   const maxRound = Math.max(...sideMatches.map((m) => m.round), 0);
   const rounds: Match[][] = [];
   for (let r = 0; r <= maxRound; r++) {
     rounds.push(
       sideMatches
-        .filter((m) => m.round === r)
-        .sort((a, b) => a.position - b.position)
+          .filter((m) => m.round === r)
+          .sort((a, b) => a.position - b.position)
     );
   }
   return rounds;
-}
-
-export function propagateWinner(
-  matches: MatchMap,
-  matchId: string,
-  winner: Team
-): MatchMap {
-  const updated = { ...matches };
-  const match = { ...updated[matchId], winner };
-  updated[matchId] = match;
-
-  if (match.nextMatchId && updated[match.nextMatchId]) {
-    const next = { ...updated[match.nextMatchId] };
-    // Determine if this match feeds into teamA or teamB
-    const isTopSlot = match.position % 2 === 0;
-    if (isTopSlot) {
-      next.teamA = winner;
-    } else {
-      next.teamB = winner;
-    }
-    // If winner changed, reset next match winner and downstream
-    if (next.winner && next.winner.id !== winner.id) {
-      // Only reset if the changed team was the previous winner
-      if (
-        (isTopSlot && next.winner.id === match.winner?.id) ||
-        (!isTopSlot && next.winner.id === match.winner?.id)
-      ) {
-        next.winner = null;
-        updated[next.matchId] = next;
-        if (next.nextMatchId) {
-          resetDownstream(updated, next.matchId);
-        }
-        return updated;
-      }
-    }
-    updated[next.matchId] = next;
-  }
-
-  // Handle 3rd place match - feed losers of semi-finals
-  updateThirdPlaceMatch(updated);
-
-  return updated;
-}
-
-function updateThirdPlaceMatch(matches: MatchMap) {
-  const thirdPlace = matches['third-place'];
-  if (!thirdPlace) return;
-
-  const finalMatch = matches['final'];
-  if (!finalMatch) return;
-
-  // Find semi-final matches (matches that feed into final)
-  const semiFinals = Object.values(matches).filter(
-    (m) => m.nextMatchId === 'final'
-  );
-
-  const updated = { ...thirdPlace };
-  semiFinals.forEach((sf, i) => {
-    if (sf.winner && sf.teamA && sf.teamB) {
-      const loser = sf.winner.id === sf.teamA.id ? sf.teamB : sf.teamA;
-      if (i === 0) updated.teamA = loser;
-      else updated.teamB = loser;
-    }
-  });
-
-  matches['third-place'] = updated;
 }
 
 export function resetDownstream(matches: MatchMap, matchId: string) {
@@ -322,16 +253,56 @@ export function resetDownstream(matches: MatchMap, matchId: string) {
 
   if (match.nextMatchId && matches[match.nextMatchId]) {
     const next = { ...matches[match.nextMatchId] };
-    const isTopSlot = match.position % 2 === 0;
-    if (isTopSlot) {
-      next.teamA = null;
+    if (match.nextMatchId === 'final') {
+      if (match.side === 'left') {
+        next.teamA = null;
+      } else {
+        next.teamB = null;
+      }
     } else {
-      next.teamB = null;
+      const isTopSlot = match.position % 2 === 0;
+      if (isTopSlot) {
+        next.teamA = null;
+      } else {
+        next.teamB = null;
+      }
     }
     next.winner = null;
     matches[next.matchId] = next;
     resetDownstream(matches, next.matchId);
   }
+}
+
+function updateThirdPlaceMatch(matches: MatchMap) {
+  const thirdPlace = matches['third-place'];
+  if (!thirdPlace) return;
+
+  const semiFinals = Object.values(matches).filter(
+    (m) => m.nextMatchId === 'final'
+  );
+
+  const updated = { ...thirdPlace };
+  semiFinals.forEach((sf) => {
+    if (sf.winner && sf.teamA && sf.teamB) {
+      const loser = sf.winner.id === sf.teamA.id ? sf.teamB : sf.teamA;
+      if (sf.side === 'left') {
+        updated.teamA = loser;
+      } else {
+        updated.teamB = loser;
+      }
+    } else {
+      // Clear if semi-final is not resolved
+      if (sf.side === 'left') updated.teamA = null;
+      else updated.teamB = null;
+    }
+  });
+  
+  // If either team is null, clear 3rd place winner
+  if (!updated.teamA || !updated.teamB) {
+    updated.winner = null;
+  }
+
+  matches['third-place'] = updated;
 }
 
 export function setWinnerAndCascade(
@@ -345,32 +316,28 @@ export function setWinnerAndCascade(
   const oldWinner = match.winner;
   match.winner = winner;
 
-  // If winner changed and there's a next match, we need to update
   if (match.nextMatchId && updated[match.nextMatchId]) {
     const next = updated[match.nextMatchId];
-    const isTopSlot = match.position % 2 === 0;
-
-    if (isTopSlot) {
-      // If old winner was propagated, reset downstream first
-      if (oldWinner && next.teamA?.id === oldWinner.id) {
+    
+    if (match.nextMatchId === 'final') {
+      if (match.side === 'left') {
         next.teamA = winner;
-        if (next.winner?.id === oldWinner.id) {
-          next.winner = null;
-          resetDownstream(updated, next.matchId);
-        }
       } else {
-        next.teamA = winner;
+        next.teamB = winner;
       }
     } else {
-      if (oldWinner && next.teamB?.id === oldWinner.id) {
-        next.teamB = winner;
-        if (next.winner?.id === oldWinner.id) {
-          next.winner = null;
-          resetDownstream(updated, next.matchId);
-        }
+      const isTopSlot = match.position % 2 === 0;
+      if (isTopSlot) {
+        next.teamA = winner;
       } else {
         next.teamB = winner;
       }
+    }
+    
+    // Reset next match winner if the propagated team changed
+    if (oldWinner && next.winner?.id === oldWinner.id) {
+      next.winner = null;
+      resetDownstream(updated, next.matchId);
     }
   }
 
