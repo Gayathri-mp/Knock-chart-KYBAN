@@ -2,6 +2,7 @@ import { useTournament } from '@/hooks/useTournament';
 import { TournamentSetup } from '@/components/TournamentSetup';
 import { BracketView } from '@/components/BracketView';
 import { RotateCcw, ChevronLeft, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const {
@@ -45,6 +46,12 @@ const Index = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/install"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-secondary transition-colors text-muted-foreground"
+          >
+            Install
+          </Link>
           <button
             onClick={autoResolve}
             disabled={!leavesFilled}
