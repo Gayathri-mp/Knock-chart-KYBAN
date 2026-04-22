@@ -21,6 +21,15 @@ export type MatchMap = Record<string, Match>;
 
 export type TeamScores = Record<string, number>;
 
+export function getMatchWinnerFromScores(match: Match, scores: TeamScores): Team | null {
+  if (!match.teamA || !match.teamB) return null;
+
+  const scoreA = scores[match.teamA.id] ?? 0;
+  const scoreB = scores[match.teamB.id] ?? 0;
+
+  return scoreA >= scoreB ? match.teamA : match.teamB;
+}
+
 /** Generate deterministic-ish scores 50-99 for each team. */
 export function generateTeamScores(teams: Team[]): TeamScores {
   const scores: TeamScores = {};

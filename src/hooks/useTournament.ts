@@ -6,8 +6,7 @@ import {
   generateTeams,
   generateBracket,
   generateTeamScores,
-  resolveBracket,
-  areLeavesFilled,
+  getMatchWinnerFromScores,
   setWinnerAndCascade,
   isPowerOfTwo,
 } from '@/lib/tournament';
@@ -29,7 +28,6 @@ export function useTournament() {
   const [matches, setMatches] = useState<MatchMap>(() => generateBracket(8));
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-  const [autoMode, setAutoMode] = useState(false);
 
   const assignedTeamIds = useMemo(() => collectAssignedTeamIds(matches), [matches]);
 
@@ -51,7 +49,6 @@ export function useTournament() {
     setTeams(newTeams);
     setScores(generateTeamScores(newTeams));
     setMatches(generateBracket(n));
-    setAutoMode(false);
     setStarted(true);
   }, []);
 
@@ -99,40 +96,25 @@ export function useTournament() {
         }
         return updated;
       });
-      setAutoMode(false);
     },
     []
   );
 
-  const selectWinner = useCallback((matchId: string, winner: Team) => {
-    setMatches((prev) => setWinnerAndCascade(prev, matchId, winner));
+  const playMatch = useCallback((matchId: string) => {
+    setMatches((prev) => {
+      const match = prev[matchId];
+      if (!match) return prev;
+
+      const winner = getMatchWinnerFromScores(match, scores);
+      if (!winner) return prev;
+
+      return setWinnerAndCascade(prev, matchId, winner);
+    });
   }, []);
 
   const resetTournament = useCallback(() => {
     setMatches(generateBracket(teamCount));
-    setAutoMode(false);
   }, [teamCount]);
-
-  const autoResolve = useCallback(() => {
-    setAutoMode(true);
-    setMatches((prev) => resolveBracket(prev, scores));
-  }, [scores]);
-
-  // While autoMode is on, recompute whenever leaf assignments change
-  const prevLeafKey = useRef<string>('');
-  useEffect(() => {
-    if (!autoMode) return;
-    const leafKey = Object.values(matches)
-      .filter((m) => m.round === 0 && !m.isThirdPlace && m.matchId !== 'final')
-      .sort((a, b) => a.matchId.localeCompare(b.matchId))
-      .map((m) => `${m.matchId}:${m.teamA?.id ?? '_'}|${m.teamB?.id ?? '_'}`)
-      .join(',');
-    if (leafKey === prevLeafKey.current) return;
-    prevLeafKey.current = leafKey;
-    setMatches((prev) => resolveBracket(prev, scores));
-  }, [matches, scores, autoMode]);
-
-  const leavesFilled = useMemo(() => areLeavesFilled(matches), [matches]);
 
   return {
     teamCount,
@@ -143,13 +125,10 @@ export function useTournament() {
     assignedTeamIds,
     error,
     started,
-    autoMode,
-    leavesFilled,
     initTournament,
     assignTeam,
     removeTeam,
-    selectWinner,
+    playMatch,
     resetTournament,
-    autoResolve,
   };
 }
