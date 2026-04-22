@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { Trophy, User, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Button } from '@/components/ui/button';
 
 interface MatchNodeProps {
   match: Match;
-  onSelectWinner: (matchId: string, winner: Team) => void;
+  onPlayMatch: (matchId: string) => void;
   onAssignTeam?: (matchId: string, slot: 'teamA' | 'teamB', team: Team) => void;
   onRemoveTeam?: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams?: Team[];
@@ -168,7 +169,7 @@ function TeamSlot({
 
 export function MatchNode({
   match,
-  onSelectWinner,
+  onPlayMatch,
   onAssignTeam,
   onRemoveTeam,
   availableTeams,
@@ -185,19 +186,13 @@ export function MatchNode({
     : availableTeams;
 
   const handleTeamClick = (slot: 'teamA' | 'teamB') => {
-    const team = slot === 'teamA' ? match.teamA : match.teamB;
-
     if (isFirstRound) {
       setDropdownSlot(dropdownSlot === slot ? null : slot);
-      return;
-    }
-
-    if (match.teamA && match.teamB && team) {
-      onSelectWinner(match.matchId, team);
     }
   };
 
   const hasWinner = !!match.winner;
+  const canPlayMatch = !!match.teamA && !!match.teamB && !match.winner;
 
   return (
     <motion.div
@@ -249,6 +244,20 @@ export function MatchNode({
           score={match.teamB && scores ? scores[match.teamB.id] : undefined}
         />
       </div>
+      {(canPlayMatch || hasWinner) && (
+        <div className="border-t border-match-border px-2 py-2">
+          <Button
+            type="button"
+            variant={hasWinner ? 'secondary' : 'default'}
+            size="sm"
+            className="w-full"
+            onClick={() => onPlayMatch(match.matchId)}
+            disabled={!canPlayMatch}
+          >
+            {hasWinner ? 'Matched' : 'Match'}
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 }

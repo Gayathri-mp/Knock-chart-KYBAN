@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 interface BracketViewProps {
   matches: MatchMap;
-  onSelectWinner: (matchId: string, winner: Team) => void;
+  onPlayMatch: (matchId: string) => void;
   onAssignTeam: (matchId: string, slot: 'teamA' | 'teamB', team: Team) => void;
   onRemoveTeam: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams: Team[];
@@ -26,7 +26,7 @@ interface NodePos {
 
 export function BracketView({
   matches,
-  onSelectWinner,
+  onPlayMatch,
   onAssignTeam,
   onRemoveTeam,
   availableTeams,
@@ -191,7 +191,7 @@ export function BracketView({
             >
               <MatchNode
                 match={match}
-                onSelectWinner={onSelectWinner}
+                onPlayMatch={onPlayMatch}
                 onAssignTeam={isFirstRound ? onAssignTeam : undefined}
                 onRemoveTeam={isFirstRound ? onRemoveTeam : undefined}
                 availableTeams={isFirstRound ? availableTeams : undefined}
