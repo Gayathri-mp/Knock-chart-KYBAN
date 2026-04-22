@@ -1,4 +1,4 @@
-import { Match, Team, TeamScores } from '@/lib/tournament';
+import { Match, Team } from '@/lib/tournament';
 import { motion } from 'framer-motion';
 import { Trophy, User, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 
 interface MatchNodeProps {
   match: Match;
-  onPlayMatch: (matchId: string) => void;
+  onPlayMatch: (matchId: string, winner: Team) => void;
   onAssignTeam?: (matchId: string, slot: 'teamA' | 'teamB', team: Team) => void;
   onRemoveTeam?: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams?: Team[];
   isFirstRound?: boolean;
   compact?: boolean;
-  scores?: TeamScores;
 }
 
 function TeamSlot({
@@ -27,7 +26,6 @@ function TeamSlot({
   onRemove,
   isFirstRound,
   onClose,
-  score,
 }: {
   team: Team | null;
   isWinner: boolean;
@@ -39,7 +37,6 @@ function TeamSlot({
   onRemove?: () => void;
   isFirstRound?: boolean;
   onClose?: () => void;
-  score?: number;
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
@@ -101,11 +98,6 @@ function TeamSlot({
               {team.logo}
             </span>
             <span className="truncate flex-1 text-left">{team.name}</span>
-            {typeof score === 'number' && (
-              <span className={`text-xs font-mono tabular-nums px-1.5 py-0.5 rounded ${isWinner ? 'bg-winner/20 text-winner' : isLoser ? 'text-loser/60' : 'text-muted-foreground'}`}>
-                {score}
-              </span>
-            )}
             {isWinner && <Trophy className="w-3.5 h-3.5 text-winner flex-shrink-0" />}
           </>
         ) : isFirstRound ? (
@@ -175,9 +167,9 @@ export function MatchNode({
   availableTeams,
   isFirstRound,
   compact,
-  scores,
 }: MatchNodeProps) {
   const [dropdownSlot, setDropdownSlot] = useState<'teamA' | 'teamB' | null>(null);
+  const [isSelectingWinner, setIsSelectingWinner] = useState(false);
   const teamAOptions = match.teamA
     ? [match.teamA, ...(availableTeams ?? []).filter((team) => team.id !== match.teamA?.id)]
     : availableTeams;
@@ -193,6 +185,18 @@ export function MatchNode({
 
   const hasWinner = !!match.winner;
   const canPlayMatch = !!match.teamA && !!match.teamB && !match.winner;
+  const canPickWinner = !!match.teamA && !!match.teamB;
+
+  useEffect(() => {
+    if (match.winner) {
+      setIsSelectingWinner(false);
+    }
+  }, [match.winner]);
+
+  const handlePickWinner = (winner: Team) => {
+    onPlayMatch(match.matchId, winner);
+    setIsSelectingWinner(false);
+  };
 
   return (
     <motion.div
@@ -228,7 +232,6 @@ export function MatchNode({
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamA'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
           onClose={() => setDropdownSlot(null)}
-          score={match.teamA && scores ? scores[match.teamA.id] : undefined}
         />
         <TeamSlot
           team={match.teamB}
@@ -241,21 +244,43 @@ export function MatchNode({
           onRemove={() => { onRemoveTeam?.(match.matchId, 'teamB'); setDropdownSlot(null); }}
           isFirstRound={isFirstRound}
           onClose={() => setDropdownSlot(null)}
-          score={match.teamB && scores ? scores[match.teamB.id] : undefined}
         />
       </div>
-      {(canPlayMatch || hasWinner) && (
+      {(canPickWinner || hasWinner) && (
         <div className="border-t border-match-border px-2 py-2">
-          <Button
-            type="button"
-            variant={hasWinner ? 'secondary' : 'default'}
-            size="sm"
-            className="w-full"
-            onClick={() => onPlayMatch(match.matchId)}
-            disabled={!canPlayMatch}
-          >
-            {hasWinner ? 'Matched' : 'Match'}
-          </Button>
+          {isSelectingWinner && canPickWinner ? (
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => handlePickWinner(match.teamA!)}
+              >
+                {match.teamA?.name}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => handlePickWinner(match.teamB!)}
+              >
+                {match.teamB?.name}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant={hasWinner ? 'secondary' : 'default'}
+              size="sm"
+              className="w-full"
+              onClick={() => setIsSelectingWinner(true)}
+              disabled={!canPlayMatch}
+            >
+              {hasWinner ? 'Matched' : 'Match'}
+            </Button>
+          )}
         </div>
       )}
     </motion.div>

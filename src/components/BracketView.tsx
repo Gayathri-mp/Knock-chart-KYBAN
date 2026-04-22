@@ -1,16 +1,15 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import { MatchMap, Team, TeamScores, getMatchesByRound } from '@/lib/tournament';
+import { MatchMap, Team, getMatchesByRound } from '@/lib/tournament';
 import { MatchNode } from './MatchNode';
 import { motion } from 'framer-motion';
 
 interface BracketViewProps {
   matches: MatchMap;
-  onPlayMatch: (matchId: string) => void;
+  onPlayMatch: (matchId: string, winner: Team) => void;
   onAssignTeam: (matchId: string, slot: 'teamA' | 'teamB', team: Team) => void;
   onRemoveTeam: (matchId: string, slot: 'teamA' | 'teamB') => void;
   availableTeams: Team[];
   teamCount: number;
-  scores?: TeamScores;
 }
 
 const NODE_W = 176;
@@ -31,7 +30,6 @@ export function BracketView({
   onRemoveTeam,
   availableTeams,
   teamCount,
-  scores,
 }: BracketViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [positions, setPositions] = useState<NodePos[]>([]);
@@ -196,7 +194,6 @@ export function BracketView({
                 onRemoveTeam={isFirstRound ? onRemoveTeam : undefined}
                 availableTeams={isFirstRound ? availableTeams : undefined}
                 isFirstRound={isFirstRound}
-                scores={scores}
               />
             </div>
           );

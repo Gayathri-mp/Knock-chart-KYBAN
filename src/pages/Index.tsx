@@ -8,7 +8,6 @@ const Index = () => {
   const {
     teamCount,
     matches,
-    scores,
     availableTeams,
     error,
     started,
@@ -67,7 +66,6 @@ const Index = () => {
           onRemoveTeam={removeTeam}
           availableTeams={availableTeams}
           teamCount={teamCount}
-          scores={scores}
         />
       </div>
     </div>

@@ -2,11 +2,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Team,
   MatchMap,
-  TeamScores,
   generateTeams,
   generateBracket,
-  generateTeamScores,
-  getMatchWinnerFromScores,
   setWinnerAndCascade,
   isPowerOfTwo,
 } from '@/lib/tournament';
@@ -24,7 +21,6 @@ function collectAssignedTeamIds(matches: MatchMap): Set<string> {
 export function useTournament() {
   const [teamCount, setTeamCount] = useState<number>(8);
   const [teams, setTeams] = useState<Team[]>(() => generateTeams(8));
-  const [scores, setScores] = useState<TeamScores>(() => generateTeamScores(generateTeams(8)));
   const [matches, setMatches] = useState<MatchMap>(() => generateBracket(8));
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
@@ -47,7 +43,6 @@ export function useTournament() {
     setTeamCount(n);
     const newTeams = generateTeams(n);
     setTeams(newTeams);
-    setScores(generateTeamScores(newTeams));
     setMatches(generateBracket(n));
     setStarted(true);
   }, []);
@@ -100,13 +95,12 @@ export function useTournament() {
     []
   );
 
-  const playMatch = useCallback((matchId: string) => {
+  const playMatch = useCallback((matchId: string, winner: Team) => {
     setMatches((prev) => {
       const match = prev[matchId];
       if (!match) return prev;
-
-      const winner = getMatchWinnerFromScores(match, scores);
-      if (!winner) return prev;
+      if (!match.teamA || !match.teamB) return prev;
+      if (winner.id !== match.teamA.id && winner.id !== match.teamB.id) return prev;
 
       return setWinnerAndCascade(prev, matchId, winner);
     });
@@ -120,7 +114,6 @@ export function useTournament() {
     teamCount,
     teams,
     matches,
-    scores,
     availableTeams,
     assignedTeamIds,
     error,
