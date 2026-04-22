@@ -57,7 +57,7 @@ const TeamSlot = ({
         >
           {isFirstRound ? (
             <>
-              <User size={14} color="#fbfbfbff" />
+              <User size={14} color="#ADB5BD" />
               <Text style={styles.placeholderText}>Select team</Text>
             </>
           ) : (
