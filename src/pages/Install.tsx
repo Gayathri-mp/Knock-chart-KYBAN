@@ -1,5 +1,14 @@
-import { ArrowLeft, Download, MonitorSmartphone, Share2, Smartphone } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+} from 'react-native';
+import { ArrowLeft, Download, MonitorSmartphone, Share2, Smartphone } from 'lucide-react-native';
 
 const installGuides = [
   {
@@ -14,81 +23,196 @@ const installGuides = [
   },
 ];
 
-const Install = () => {
+interface InstallProps {
+  onBack?: () => void;
+}
+
+const Install = ({ onBack }: InstallProps) => {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-        </div>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <ArrowLeft size={20} color="#C8D6E5" />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        </View>
 
-        <div className="grid flex-1 gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-                <MonitorSmartphone className="h-4 w-4" />
-                Installable mobile app
-              </div>
-              <h1 className="font-heading text-4xl font-bold leading-none sm:text-5xl">
-                Install Knockout Bracket on your phone
-              </h1>
-              <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
-                Use the same bracket experience on mobile, directly from your home screen, without changing the core app.
-              </p>
-            </div>
+        <View style={styles.heroSection}>
+          <View style={styles.badge}>
+            <MonitorSmartphone size={16} color="#00E676" />
+            <Text style={styles.badgeText}>Installable mobile app</Text>
+          </View>
+          <Text style={styles.title}>Install Knockout Bracket on your phone</Text>
+          <Text style={styles.subtitle}>
+            Use the same bracket experience on mobile, directly from your home screen.
+          </Text>
+        </View>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {installGuides.map(({ title, icon: Icon, steps }) => (
-                <article key={title} className="rounded-lg border border-border bg-card p-5">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-lg bg-secondary p-2 text-primary">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h2 className="font-heading text-2xl font-bold">{title}</h2>
-                  </div>
-                  <ol className="space-y-3 text-sm text-muted-foreground">
-                    {steps.map((step, index) => (
-                      <li key={step} className="flex gap-3">
-                        <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground">
-                          {index + 1}
-                        </span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </article>
-              ))}
-            </div>
-          </div>
+        <View style={styles.grid}>
+          {installGuides.map(({ title, icon: Icon, steps }) => (
+            <View key={title} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.iconContainer}>
+                  <Icon size={20} color="#00E676" />
+                </View>
+                <Text style={styles.cardTitle}>{title}</Text>
+              </View>
+              <View style={styles.stepsContainer}>
+                {steps.map((step, index) => (
+                  <View key={step} style={styles.stepRow}>
+                    <View style={styles.stepNumber}>
+                      <Text style={styles.stepNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.stepText}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
 
-          <aside className="rounded-lg border border-border bg-card p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="rounded-lg bg-secondary p-2 text-accent">
-                <Smartphone className="h-5 w-5" />
-              </div>
-              <h2 className="font-heading text-2xl font-bold">What you get</h2>
-            </div>
-
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>Full-screen app feel from the home screen</li>
-              <li>Fast access to bracket editing during matches</li>
-              <li>One shared codebase for desktop and mobile browsers</li>
-            </ul>
-
-            <div className="mt-6 rounded-lg border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
-              Tip: use the phone/tablet preview toggle above the canvas to test the mobile layout inside Lovable.
-            </div>
-          </aside>
-        </div>
-      </section>
-    </main>
+        <View style={styles.aside}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: '#1E2A38' }]}>
+              <Smartphone size={20} color="#00E676" />
+            </View>
+            <Text style={styles.cardTitle}>What you get</Text>
+          </View>
+          <View style={styles.featureList}>
+            <Text style={styles.featureItem}>• Full-screen app feel from the home screen</Text>
+            <Text style={styles.featureItem}>• Fast access to bracket editing</Text>
+            <Text style={styles.featureItem}>• One shared codebase for all devices</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0A0D10',
+  },
+  container: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  backText: {
+    color: '#C8D6E5',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  heroSection: {
+    marginBottom: 32,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 230, 118, 0.3)',
+    gap: 8,
+    marginBottom: 16,
+  },
+  badgeText: {
+    color: '#00E676',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 38,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#3A5A7C',
+    lineHeight: 24,
+  },
+  grid: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: '#0F1520',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E2738',
+    padding: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  iconContainer: {
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    padding: 8,
+    borderRadius: 8,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  stepsContainer: {
+    gap: 12,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#1E2738',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  stepText: {
+    flex: 1,
+    color: '#C8D6E5',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aside: {
+    backgroundColor: '#0F1520',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E2738',
+    padding: 20,
+  },
+  featureList: {
+    gap: 8,
+  },
+  featureItem: {
+    color: '#C8D6E5',
+    fontSize: 14,
+  },
+});
 
 export default Install;
