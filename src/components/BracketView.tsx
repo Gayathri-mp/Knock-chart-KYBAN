@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   sectionLabel: { position: 'absolute', fontSize: 9, fontWeight: 'bold', color: '#F5A623', letterSpacing: 1, zIndex: 5 },
   teamBox: { position: 'absolute', width: NODE_W, height: NODE_H, backgroundColor: '#0F1520', borderRadius: 8, borderWidth: 1, borderColor: '#1E2738', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, gap: 8 },
   winnerBox: { borderColor: '#00E676', backgroundColor: '#091A12' },
-  loserBox: { borderColor: '#FF4D4D44', opacity: 0.45 },
+  loserBox: { borderColor: '#FF5252', backgroundColor: '#1A0D0D', opacity: 1 },
   icon: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   name: { flex: 1, fontSize: 12, fontWeight: '700', color: '#C8D6E5' },
   empty: { color: '#3A4A5C', fontWeight: '400', fontStyle: 'italic' },
