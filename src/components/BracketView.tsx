@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   loserBox: { borderColor: '#FF5252', backgroundColor: '#1A0D0D', opacity: 1 },
   icon: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   name: { flex: 1, fontSize: 12, fontWeight: '700', color: '#C8D6E5' },
-  empty: { color: '#3A4A5C', fontWeight: '400', fontStyle: 'italic' },
+  empty: { color: '#FFFFFF', fontWeight: '400', fontStyle: 'italic' },
   winnerName: { color: '#FFFFFF' },
   badge: { fontSize: 14 },
   matchBtn: { position: 'absolute', backgroundColor: '#0F1520', borderWidth: 2, borderColor: '#2A3A50', alignItems: 'center', justifyContent: 'center', zIndex: 10, elevation: 8 },

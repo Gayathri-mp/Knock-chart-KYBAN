@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 12,
-    color: '#ADB5BD',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   emptySlot: {
